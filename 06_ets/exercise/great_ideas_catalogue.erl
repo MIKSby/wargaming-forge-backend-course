@@ -37,11 +37,17 @@ init() ->
 
 
 add_idea(Id, Title, Author, Rating, Description) ->
+    Idea = #idea{id = Id, title = Title, author = Author,
+        rating = Rating, description = Description},
+    ets:insert(great_ideas_table, Idea),
     ok.
 
 
 get_idea(Id) ->
-    not_found.
+    case ets:lookup(great_ideas_table, Id) of
+        [Result] -> {ok, Result};
+        [] -> not_found
+    end.
 
 
 ideas_by_author(Author) ->
