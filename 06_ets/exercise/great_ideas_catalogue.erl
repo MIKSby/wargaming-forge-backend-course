@@ -51,12 +51,34 @@ get_idea(Id) ->
 
 
 ideas_by_author(Author) ->
-    [].
+    MS = ets:fun2ms(fun(#idea{author = IAuthor} = Idea)
+        when IAuthor =:= Author -> Idea end),
+    ets:select(great_ideas_table, MS).
 
 
 ideas_by_rating(Rating) ->
-    [].
+    MS = ets:fun2ms(
+        fun({idea, Id, Title, Author, IdeaRating, Description})
+            when IdeaRating >= Rating ->
+            {idea, Id, Title, Author, IdeaRating, Description}
+        end
+    ),
+    ets:select(great_ideas_table, MS).
 
 
 get_authors() ->
-    [].
+    MS = ets:fun2ms(fun(#idea{author = Author}) -> Author end),
+    Authors = ets:select(great_ideas_table, MS),
+    AuthorsIdeas = lists:foldl(fun(Author, Acc) ->
+        case maps:find(Author, Acc) of
+            {ok, Num} -> maps:put(Author, Num + 1, Acc);
+            error -> maps:put(Author, 1, Acc)
+        end
+                               end,
+        #{}, Authors),
+    lists:sort(fun({A1, N1}, {A2, N2}) ->
+        case N1 =:= N2 of
+            true -> A1 < A2;
+            _ -> N1 > N2
+        end
+               end, maps:to_list(AuthorsIdeas)).
